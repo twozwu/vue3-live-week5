@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://pro.fontawesome.com/releases/v5.10.0/css/all.css"
+      integrity="sha384-AYmEC3Yw5cVb3ZcuHtOA93w35dYTsvhLPVnYs9eStHfGJvOvKxVfELGroGkvsg+p"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="./CSS/all.min.css" />
+  </head>
+  <body>
+    <div id="app">
+      <nav-component ref="nav"></nav-component>
+      <div class="container-xxl">
+        <div class="row">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>圖片</th>
+                <th>商品名稱</th>
+                <th>價格</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="item in products" :key="item.id">
+                <td style="width: 200px;">
+                  <div
+                    style="
+                      height: 100px;
+                      background-size: cover;
+                      background-position: center;
+                    "
+                    :style="{backgroundImage: `url(${item.imageUrl})`}"
+                  ></div>
+                </td>
+                <td>
+                  {{ item.title }}
+                </td>
+                <td>
+                  <div class="h5" v-if="!item.price">
+                    {{ item.origin_price }} 元
+                  </div>
+                  <del class="h6" v-if="item.price"
+                    >原價 {{ item.origin_price }} 元</del
+                  >
+                  <div class="h5" v-if="item.price">
+                    現在只要 {{ item.price }} 元
+                  </div>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary"
+                      @click="openModal('detail',item)"
+                    >
+                      查看更多
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger"
+                      @click="$refs.detail.addToCart(item.id)"
+                    >
+                      <i
+                        class="fas fa-spinner fa-pulse"
+                        v-if="$refs.detail.loadingStatus==item.id"
+                      ></i>
+                      加到購物車
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <detail-component
+            ref="detail"
+            :product="tempProducts"
+          ></detail-component>
+          <cart ref="cart"></cart>
+        </div>
+      </div>
+    </div>
+    <script type="text/x-template" id="navComponent">
+      <nav class="navbar navbar-dark bg-primary">
+        <div class="container-fluid">
+          <a class="navbar-brand">
+            購物列表
+          </a>
+          <i
+            class="navbar-brand fs-3 position-relative bi bi-cart2"
+            @click="openModal('cart')"
+            style="cursor: pointer;"
+            ><span
+              class="bg-danger position-absolute top-20 start-100 translate-middle fs-7 d-inline-block badge rounded-pill" v-if="cartsLength != ''"
+              >{{cartsLength}}</span
+            ></i
+          >
+        </div>
+      </nav>
+    </script>
+    <script type="text/x-template" id="detailComponent">
+      <div class="modal fade" id="detailComponent" tabindex="-1" role="dialog"
+       aria-labelledby="detailComponentLabel" aria-hidden="true" ref="detailComponent">
+        <div class="modal-dialog modal-xl" role="document">
+          <div class="modal-content border-0">
+            <div class="modal-header bg-dark text-white">
+              <h5 class="modal-title" id="exampleModalLabel">
+                <span>{{ product.title }}</span>
+              </h5>
+              <button type="button" class="btn-close"
+                      data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row">
+                <div class="col-sm-6">
+                  <img class="img-fluid" :src="product.imageUrl" alt="">
+                </div>
+                <div class="col-sm-6">
+                  <span class="badge bg-primary rounded-pill">{{ product.category }}</span>
+                  <p>商品描述：{{ product.description }}</p>
+                  <p>商品內容：{{ product.content }}</p>
+                  <div class="h5" v-if="!product.price">{{ product.origin_price }} 元</div>
+                  <del class="h6" v-if="product.price">原價 {{ product.origin_price }} 元</del>
+                  <div class="h5" v-if="product.price">現在只要 {{ product.price }} 元</div>
+                  <div>
+                    <div class="input-group d-flex align-items-center">
+                      <label for="qty" class="">數量：</label><input type="number" class="form-control" id="qty" v-model.number="qty" min="1" placeholder="數量">
+                      <button type="button" class="btn btn-primary" @click="addCart(product, qty)"><i
+                        class="fas fa-spinner fa-pulse"
+                        v-if="loadingStatus==product.id"
+                      ></i>加入購物車</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </script>
+    <script type="text/x-template" id="cart">
+      <div class="modal fade" id="cart" tabindex="-1" aria-labelledby="cartLabel" aria-hidden="true">
+         <div class="modal-dialog modal-xl">
+           <div class="modal-content">
+             <div class="modal-header bg-secondary text-white">
+               <h5 class="modal-title" id="exampleModalLabel">購物車列表</h5>
+               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+             </div>
+             <div class="modal-body">
+               <!-- 購物車列表 -->
+                <div class="text-end">
+                  <button class="btn btn-outline-danger" type="button" @click="clearCart"><i
+                    class="fas fa-spinner fa-pulse"
+                    v-if="loadingStatus=='clear'"
+                  ></i>清空購物車</button>
+                </div>
+                <table class="table align-middle">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th>品名</th>
+                      <th style="width: 150px">數量/單位</th>
+                      <th class="text-end">單價</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template v-if="carts.carts != 0">
+                      <tr v-for="(item, index) in carts.carts" :key="item.id">
+                        <td>
+                          <button type="button" class="btn btn-outline-danger btn-sm" @click="delItem(item.id)"
+                            >
+                            <i class="fas fa-spinner fa-pulse" v-if="loadingStatus == item.id"></i>
+                            x
+                          </button>
+                        </td>
+                        <td>
+                          {{item.product.title}}
+                          <div class="text-success" v-if="item.coupon">
+                            已套用優惠券
+                          </div>
+                        </td>
+                        <td>
+                          <div class="input-group input-group-sm">
+                            <div class="input-group mb-3">
+                              <input
+                                min="1" type="number" class="form-control" v-model.number="item.qty" :disabled="loadingStatus == item.id" @blur="updateCart(item)" >
+                              <span class="input-group-text" id="basic-addon2">{{item.product.unit}}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td class="text-end">
+                          <small  class="text-success">折扣價：{{item.product.price}}</small>
+
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                  <tfoot v-if="carts.total != 0">
+                    <tr>
+                      <td colspan="3" class="text-end">總計</td>
+                      <td class="text-end">{{carts.total}}</td>
+                    </tr>
+                    <tr >
+                      <td colspan="3" class="text-end text-success">折扣價</td>
+                      <td class="text-end text-success">{{carts.final_total}}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+                <div v-if="carts.total == 0" class="text-center">
+                  <p>購物車為空</p>
+                </div>
+                <div class="my-5 row justify-content-center">
+                  <v-form ref="form" class="col-md-6" v-slot="{ errors }" @submit="createOrder">
+                    <div class="mb-3">
+                      <label for="email" class="form-label">Email</label>
+                      <v-field id="email" name="email" type="email" class="form-control"
+                        :class="{ 'is-invalid': errors['email'] }" placeholder="請輸入 Email" rules="email|required"
+                        v-model="form.user.email"></v-field>
+                      <error-message name="email" class="invalid-feedback"></error-message>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="name" class="form-label">收件人姓名</label>
+                      <v-field id="name" name="姓名" type="text" class="form-control" :class="{ 'is-invalid': errors['姓名'] }"
+                        placeholder="請輸入姓名" rules="required" v-model="form.user.name"></v-field>
+                      <error-message name="姓名" class="invalid-feedback"></error-message>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="tel" class="form-label">收件人電話</label>
+                      <v-field id="tel" name="電話" type="tel" class="form-control" :class="{ 'is-invalid': errors['電話'] }"
+                        placeholder="請輸入電話" rules="required|min:8|max:10" v-model="form.user.tel"></v-field>
+                      <error-message name="電話" class="invalid-feedback"></error-message>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="address" class="form-label">收件人地址</label>
+                      <v-field id="address" name="地址" type="text" class="form-control" :class="{ 'is-invalid': errors['地址'] }"
+                        placeholder="請輸入地址" rules="required" v-model="form.user.address"></v-field>
+                      <error-message name="地址" class="invalid-feedback"></error-message>
+                    </div>
+
+                    <div class="mb-3">
+                      <label for="message" class="form-label">留言</label>
+                      <textarea name="" id="message" class="form-control" cols="30" rows="10" v-model="form.message"></textarea>
+                    </div>
+                    <div class="text-end">
+                      <button type="submit" class="btn btn-danger">送出訂單</button>
+                    </div>
+                  </v-form>
+                </div>
+             </div>
+             <!-- <div class="modal-footer">
+               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+               <button type="button" class="btn btn-primary">Save changes</button>
+             </div> -->
+           </div>
+         </div>
+       </div>
+    </script>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-gtEjrD/SeCtmISkJkNUaaKMoLD0//ElJ19smozuHV6z3Iehds+3Ulb9Bn9Plx0x4"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/vue@next"></script>
+    <!-- <script src="https://unpkg.com/vee-validate@next"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vee-validate/4.1.17/vee-validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vee-validate/i18n@4.1.17/dist/vee-validate-i18n.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@vee-validate/rules@4.1.17/dist/vee-validate-rules.min.js"></script>
+
+    <script type="module" src="./js/index.js"></script>
+  </body>
+</html>
